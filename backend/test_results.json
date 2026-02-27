@@ -1,0 +1,271 @@
+{
+  "video_url": "https://www.youtube.com/watch?v=yH1IdJAN7jA",
+  "total_comments": 26,
+  "percentages": {
+    "Positive": 42.3,
+    "Neutral": 42.3,
+    "Negative": 15.4
+  },
+  "results": [
+    {
+      "comment": "Very Best Content and it's unique from other courses :) Love It \ud83d\udc97",
+      "label": "Positive",
+      "confidence": 0.9403,
+      "probabilities": {
+        "Positive": 0.9403,
+        "Neutral": 0.0292,
+        "Negative": 0.0305
+      }
+    },
+    {
+      "comment": "where i can find the prompt for its not in the description by the way loved it\ud83d\udc97\ud83d\udc97",
+      "label": "Neutral",
+      "confidence": 0.804,
+      "probabilities": {
+        "Positive": 0.0607,
+        "Neutral": 0.804,
+        "Negative": 0.1353
+      }
+    },
+    {
+      "comment": "It is not of enterprise scale.",
+      "label": "Neutral",
+      "confidence": 0.5568,
+      "probabilities": {
+        "Positive": 0.0342,
+        "Neutral": 0.5568,
+        "Negative": 0.409
+      }
+    },
+    {
+      "comment": "I always stucked at project setting up phase, as i am trying to do the project for first time, i hav...",
+      "label": "Positive",
+      "confidence": 0.8797,
+      "probabilities": {
+        "Positive": 0.8797,
+        "Neutral": 0.0969,
+        "Negative": 0.0234
+      }
+    },
+    {
+      "comment": "Thanks a lot ayush sir it's very helpful \u2764\u2764\u2764\u2764 keep learning and keep working\u2764\u2764\u2764",
+      "label": "Positive",
+      "confidence": 0.9392,
+      "probabilities": {
+        "Positive": 0.9392,
+        "Neutral": 0.0279,
+        "Negative": 0.0329
+      }
+    },
+    {
+      "comment": "Your content has helped me a lot in building my career.",
+      "label": "Positive",
+      "confidence": 0.937,
+      "probabilities": {
+        "Positive": 0.937,
+        "Neutral": 0.0313,
+        "Negative": 0.0318
+      }
+    },
+    {
+      "comment": "bro how to start coding python basic ataa hai",
+      "label": "Neutral",
+      "confidence": 0.8982,
+      "probabilities": {
+        "Positive": 0.0284,
+        "Neutral": 0.8982,
+        "Negative": 0.0735
+      }
+    },
+    {
+      "comment": "awesome!",
+      "label": "Positive",
+      "confidence": 0.9277,
+      "probabilities": {
+        "Positive": 0.9277,
+        "Neutral": 0.0396,
+        "Negative": 0.0327
+      }
+    },
+    {
+      "comment": "Can Someone tell me What tech stack used here?",
+      "label": "Neutral",
+      "confidence": 0.957,
+      "probabilities": {
+        "Positive": 0.0209,
+        "Neutral": 0.957,
+        "Negative": 0.0222
+      }
+    },
+    {
+      "comment": "I'm really curious to know what's the next big thing you are working on?",
+      "label": "Neutral",
+      "confidence": 0.9491,
+      "probabilities": {
+        "Positive": 0.0225,
+        "Neutral": 0.9491,
+        "Negative": 0.0285
+      }
+    },
+    {
+      "comment": "This is too good. Thanks.",
+      "label": "Positive",
+      "confidence": 0.9341,
+      "probabilities": {
+        "Positive": 0.9341,
+        "Neutral": 0.0357,
+        "Negative": 0.0302
+      }
+    },
+    {
+      "comment": "As non coder can i make saas product by cluade or gemini or the cursor",
+      "label": "Neutral",
+      "confidence": 0.9373,
+      "probabilities": {
+        "Positive": 0.0465,
+        "Neutral": 0.9373,
+        "Negative": 0.0162
+      }
+    },
+    {
+      "comment": "\u2764geat dear \u2764",
+      "label": "Positive",
+      "confidence": 0.5319,
+      "probabilities": {
+        "Positive": 0.5319,
+        "Neutral": 0.3166,
+        "Negative": 0.1514
+      }
+    },
+    {
+      "comment": "Hey, Is the the age where we don't have to learn algorithms and build own model but use the best mod...",
+      "label": "Negative",
+      "confidence": 0.4992,
+      "probabilities": {
+        "Positive": 0.0332,
+        "Neutral": 0.4676,
+        "Negative": 0.4992
+      }
+    },
+    {
+      "comment": "What are the prerequisites for this project?",
+      "label": "Neutral",
+      "confidence": 0.9513,
+      "probabilities": {
+        "Positive": 0.0163,
+        "Neutral": 0.9513,
+        "Negative": 0.0324
+      }
+    },
+    {
+      "comment": "Woow",
+      "label": "Neutral",
+      "confidence": 0.7068,
+      "probabilities": {
+        "Positive": 0.2512,
+        "Neutral": 0.7068,
+        "Negative": 0.042
+      }
+    },
+    {
+      "comment": "\ud83d\udc4d",
+      "label": "Positive",
+      "confidence": 0.4871,
+      "probabilities": {
+        "Positive": 0.4871,
+        "Neutral": 0.3468,
+        "Negative": 0.1661
+      }
+    },
+    {
+      "comment": "Hi Ayush, I follow you a lot.\nI am doing a AI music composer that uses LSTM where the model generate...",
+      "label": "Neutral",
+      "confidence": 0.8734,
+      "probabilities": {
+        "Positive": 0.1087,
+        "Neutral": 0.8734,
+        "Negative": 0.018
+      }
+    },
+    {
+      "comment": "Great Content! Thanks!\u2764\u2764",
+      "label": "Positive",
+      "confidence": 0.9301,
+      "probabilities": {
+        "Positive": 0.9301,
+        "Neutral": 0.0348,
+        "Negative": 0.0351
+      }
+    },
+    {
+      "comment": "Thanks a lot \u2764 for sharing",
+      "label": "Positive",
+      "confidence": 0.9117,
+      "probabilities": {
+        "Positive": 0.9117,
+        "Neutral": 0.0499,
+        "Negative": 0.0383
+      }
+    },
+    {
+      "comment": "source code????",
+      "label": "Negative",
+      "confidence": 0.564,
+      "probabilities": {
+        "Positive": 0.0255,
+        "Neutral": 0.4105,
+        "Negative": 0.564
+      }
+    },
+    {
+      "comment": "Good video.. but what is the purpose of this project, the same thing can be done with sora or mid jo...",
+      "label": "Negative",
+      "confidence": 0.879,
+      "probabilities": {
+        "Positive": 0.0192,
+        "Neutral": 0.1017,
+        "Negative": 0.879
+      }
+    },
+    {
+      "comment": "Ayush, \nI want to get enrolled in your PAID ML Course. \nUnfortunately, your discord & website links ...",
+      "label": "Negative",
+      "confidence": 0.8597,
+      "probabilities": {
+        "Positive": 0.025,
+        "Neutral": 0.1153,
+        "Negative": 0.8597
+      }
+    },
+    {
+      "comment": "Hi Ayush.\nI have completed the AI project. You said we should send it to you when done, where can I ...",
+      "label": "Neutral",
+      "confidence": 0.8754,
+      "probabilities": {
+        "Positive": 0.099,
+        "Neutral": 0.8754,
+        "Negative": 0.0257
+      }
+    },
+    {
+      "comment": "I'm in class 10 (ICSE)... I want to start all these but I can't understand how to manage my studies ...",
+      "label": "Neutral",
+      "confidence": 0.5739,
+      "probabilities": {
+        "Positive": 0.039,
+        "Neutral": 0.5739,
+        "Negative": 0.3871
+      }
+    },
+    {
+      "comment": "Thanks @AyushSinghSh",
+      "label": "Positive",
+      "confidence": 0.5949,
+      "probabilities": {
+        "Positive": 0.5949,
+        "Neutral": 0.3617,
+        "Negative": 0.0434
+      }
+    }
+  ]
+}

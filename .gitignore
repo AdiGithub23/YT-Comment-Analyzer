@@ -1,0 +1,11 @@
+*Artifacts
+final_model
+
+*Details.MD
+HF-Deployment.MD
+
+_ytgrader/
+__pycache__
+
+.env
+
