@@ -1,13 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VideoInput from './VideoInput';
 import SentimentChart from './SentimentChart';
-import { extractVideoId, fetchVideoComments } from '../utils/youtube';
-import { analyzeComments } from '../api/sentiment';
+import { extractVideoId } from '../utils/youtube';
 
 const Popup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
+  const pollRef = useRef(null);
+
+  // Read current state from storage on mount
+  useEffect(() => {
+    syncFromStorage();
+    return () => clearInterval(pollRef.current);
+  }, []);
+
+  const syncFromStorage = () => {
+    chrome.storage?.local?.get(
+      ['sentimentStatus', 'sentimentResults', 'sentimentError'],
+      (data) => {
+        if (data?.sentimentStatus === 'loading') {
+          setLoading(true);
+          setError(null);
+          setResults(null);
+          startPolling();
+        } else if (data?.sentimentStatus === 'done' && data?.sentimentResults) {
+          setLoading(false);
+          setError(null);
+          setResults(data.sentimentResults);
+        } else if (data?.sentimentStatus === 'error') {
+          setLoading(false);
+          setError(data.sentimentError || 'Unknown error');
+          setResults(null);
+        }
+      }
+    );
+  };
+
+  const startPolling = () => {
+    clearInterval(pollRef.current);
+    pollRef.current = setInterval(() => {
+      chrome.storage?.local?.get(
+        ['sentimentStatus', 'sentimentResults', 'sentimentError'],
+        (data) => {
+          if (data?.sentimentStatus === 'done') {
+            setLoading(false);
+            setResults(data.sentimentResults);
+            setError(null);
+            clearInterval(pollRef.current);
+          } else if (data?.sentimentStatus === 'error') {
+            setLoading(false);
+            setError(data.sentimentError || 'Unknown error');
+            setResults(null);
+            clearInterval(pollRef.current);
+          }
+        }
+      );
+    }, 500);
+  };
 
   const getCurrentTabUrl = () => {
     return new Promise((resolve, reject) => {
@@ -24,39 +74,22 @@ const Popup = () => {
   };
 
   const handleAnalyze = async (url) => {
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      setError('Invalid YouTube URL');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResults(null);
 
-    try {
-      // Extract video ID
-      const videoId = extractVideoId(url);
-      if (!videoId) {
-        throw new Error('Invalid YouTube URL');
+    chrome.runtime.sendMessage(
+      { action: 'analyze', url, maxResults: 100 },
+      () => {
+        startPolling();
       }
-
-      // Fetch comments
-      const commentsResult = await fetchVideoComments(videoId, 50);
-      if (!commentsResult.success) {
-        throw new Error(`YouTube API: ${commentsResult.error}`);
-      }
-
-      if (commentsResult.comments.length === 0) {
-        throw new Error('No comments found for this video');
-      }
-
-      // Analyze sentiment
-      const sentimentResult = await analyzeComments(commentsResult.comments);
-      if (!sentimentResult.success) {
-        throw new Error(`Sentiment API: ${sentimentResult.error}`);
-      }
-
-      setResults(sentimentResult);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const handleAnalyzeCurrent = async () => {
@@ -68,7 +101,6 @@ const Popup = () => {
       await handleAnalyze(url);
     } catch (err) {
       setError(err.message);
-      setLoading(false);
     }
   };
 
@@ -126,5 +158,3 @@ const Popup = () => {
 };
 
 export default Popup;
-
-
