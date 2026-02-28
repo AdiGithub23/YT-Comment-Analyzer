@@ -3,6 +3,7 @@
 import os
 import torch
 import requests
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -13,25 +14,46 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="YouTube Comment Sentiment API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model/final_model")
+# ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = ["*"]
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not YOUTUBE_API_KEY:
     raise RuntimeError("YOUTUBE_API_KEY not set in environment")
 
-# Label mapping
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model/final_model")
 ID2LABEL = {0: "Positive", 1: "Neutral", 2: "Negative"}
 LABEL2ID = {"Positive": 0, "Neutral": 1, "Negative": 2}
 MAX_LENGTH = 128
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global tokenizer, model
+    print(f"Loading model from {MODEL_PATH} on {device}...")
+    
+    # Load tokenizer and model
+    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
+    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+    model.to(device)
+    model.eval()
+    print("Model loaded successfully!")
+    
+    yield
+    
+    print("Shutting down... releasing resources.")
+    model = None
+    tokenizer = None
+
+app = FastAPI(title="YouTube Comment Sentiment API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Global variables for model
 tokenizer = None
@@ -57,18 +79,6 @@ class FetchCommentsResponse(BaseModel):
     total: int
     error: Optional[str] = None
 
-@app.on_event("startup")
-async def load_model():
-    """Load model on startup"""
-    global tokenizer, model
-    print(f"Loading model from {MODEL_PATH} on {device}...")
-    
-    # Load tokenizer and model
-    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
-    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
-    model.to(device)
-    model.eval()
-    print("Model loaded successfully!")
 
 @app.get("/")
 async def root():
