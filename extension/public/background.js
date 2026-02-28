@@ -1,5 +1,8 @@
 // const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
 const BACKEND_URL = '__BACKEND_URL__';
+
+let abortController = null;
 
 function extractVideoId(url) {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -7,24 +10,30 @@ function extractVideoId(url) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-async function fetchComments(videoId, maxResults) {
-  const res = await fetch(`${BACKEND_URL}/fetch-comments?videoId=${videoId}&maxResults=${maxResults}`);
+async function fetchComments(videoId, maxResults, signal) {
+  const res = await fetch(
+    `${BACKEND_URL}/fetch-comments?videoId=${videoId}&maxResults=${maxResults}`,
+    { signal }
+  );
   if (!res.ok) throw new Error(`YouTube API error: ${res.statusText}`);
   return res.json();
 }
 
-async function analyzeSentiment(comments) {
+async function analyzeSentiment(comments, signal) {
   const res = await fetch(`${BACKEND_URL}/predict`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ comments }),
+    signal,
   });
   if (!res.ok) throw new Error(`Sentiment API error: ${res.statusText}`);
   return res.json();
 }
 
 async function runAnalysis(url, maxResults = 100) {
-  // Set loading state
+  abortController = new AbortController();
+  const signal = abortController.signal;
+
   await chrome.storage.local.set({
     sentimentStatus: 'loading',
     sentimentResults: null,
@@ -35,13 +44,12 @@ async function runAnalysis(url, maxResults = 100) {
     const videoId = extractVideoId(url);
     if (!videoId) throw new Error('Invalid YouTube URL');
 
-    const commentsResult = await fetchComments(videoId, maxResults);
+    const commentsResult = await fetchComments(videoId, maxResults, signal);
     if (!commentsResult.success) throw new Error(`YouTube API: ${commentsResult.error}`);
     if (commentsResult.comments.length === 0) throw new Error('No comments found for this video');
 
-    const data = await analyzeSentiment(commentsResult.comments);
+    const data = await analyzeSentiment(commentsResult.comments, signal);
 
-    // Aggregate results
     const counts = { Positive: 0, Neutral: 0, Negative: 0 };
     data.results.forEach((r) => counts[r.label]++);
     const total = data.results.length;
@@ -65,19 +73,41 @@ async function runAnalysis(url, maxResults = 100) {
       sentimentError: null,
     });
   } catch (err) {
-    await chrome.storage.local.set({
-      sentimentStatus: 'error',
-      sentimentResults: null,
-      sentimentError: err.message,
-    });
+    if (err.name === 'AbortError') {
+      await chrome.storage.local.set({
+        sentimentStatus: 'idle',
+        sentimentResults: null,
+        sentimentError: null,
+      });
+    } else {
+      await chrome.storage.local.set({
+        sentimentStatus: 'error',
+        sentimentResults: null,
+        sentimentError: err.message,
+      });
+    }
+  } finally {
+    abortController = null;
   }
 }
 
-// Listen for messages from the popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'analyze') {
     runAnalysis(message.url, message.maxResults || 100);
     sendResponse({ started: true });
   }
+
+  if (message.action === 'cancel') {
+    if (abortController) {
+      abortController.abort();
+    }
+    chrome.storage.local.set({
+      sentimentStatus: 'idle',
+      sentimentResults: null,
+      sentimentError: null,
+    });
+    sendResponse({ cancelled: true });
+  }
+
   return true;
 });

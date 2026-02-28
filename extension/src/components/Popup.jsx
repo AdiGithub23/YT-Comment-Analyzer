@@ -9,7 +9,6 @@ const Popup = () => {
   const [results, setResults] = useState(null);
   const pollRef = useRef(null);
 
-  // Read current state from storage on mount
   useEffect(() => {
     syncFromStorage();
     return () => clearInterval(pollRef.current);
@@ -32,6 +31,11 @@ const Popup = () => {
           setLoading(false);
           setError(data.sentimentError || 'Unknown error');
           setResults(null);
+        } else {
+          // idle, cancelled, or no status — clean slate
+          setLoading(false);
+          setError(null);
+          setResults(null);
         }
       }
     );
@@ -51,6 +55,11 @@ const Popup = () => {
           } else if (data?.sentimentStatus === 'error') {
             setLoading(false);
             setError(data.sentimentError || 'Unknown error');
+            setResults(null);
+            clearInterval(pollRef.current);
+          } else if (data?.sentimentStatus === 'idle') {
+            setLoading(false);
+            setError(null);
             setResults(null);
             clearInterval(pollRef.current);
           }
@@ -86,9 +95,7 @@ const Popup = () => {
 
     chrome.runtime.sendMessage(
       { action: 'analyze', url, maxResults: 100 },
-      () => {
-        startPolling();
-      }
+      () => { startPolling(); }
     );
   };
 
@@ -102,6 +109,15 @@ const Popup = () => {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleCancel = () => {
+    clearInterval(pollRef.current);
+    chrome.runtime.sendMessage({ action: 'cancel' }, () => {
+      setLoading(false);
+      setError(null);
+      setResults(null);
+    });
   };
 
   return (
@@ -122,6 +138,9 @@ const Popup = () => {
         <div className="loading-container">
           <div className="spinner" />
           <p>Analyzing comments…</p>
+          <button className="btn-cancel" onClick={handleCancel}>
+            Cancel
+          </button>
         </div>
       )}
 

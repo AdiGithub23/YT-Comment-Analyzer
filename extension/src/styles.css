@@ -349,3 +349,25 @@ body {
   flex-direction: column;
   gap: 8px;
 }
+
+/* ── Cancel Button ── */
+.btn-cancel {
+  padding: 7px 20px;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.btn-cancel:hover {
+  color: var(--negative);
+  border-color: var(--negative);
+}
+
+.btn-cancel:active {
+  transform: scale(0.97);
+}
