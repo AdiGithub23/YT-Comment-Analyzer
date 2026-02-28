@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
-ALLOWED_ORIGINS = ["*"]
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+# ALLOWED_ORIGINS = ["*"]
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not YOUTUBE_API_KEY:

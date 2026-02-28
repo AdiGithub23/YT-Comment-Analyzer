@@ -9,6 +9,20 @@ const Popup = () => {
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
 
+  const getCurrentTabUrl = () => {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else if (tabs.length === 0) {
+          reject(new Error('No active tab found'));
+        } else {
+          resolve(tabs[0].url);
+        }
+      });
+    });
+  };
+
   const handleAnalyze = async (url) => {
     setLoading(true);
     setError(null);
@@ -45,9 +59,41 @@ const Popup = () => {
     }
   };
 
+  const handleAnalyzeCurrent = async () => {
+    try {
+      const url = await getCurrentTabUrl();
+      // Check if it's a YouTube URL
+      if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
+        throw new Error('Current tab is not a YouTube video page');
+      }
+      await handleAnalyze(url);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="popup">
       <VideoInput onAnalyze={handleAnalyze} loading={loading} />
+      
+      <div style={{ marginTop: '10px', textAlign: 'center' }}>
+        <button 
+          onClick={handleAnalyzeCurrent} 
+          disabled={loading}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#4285f4',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            width: '100%'
+          }}
+        >
+          {loading ? 'Analyzing...' : 'Analyze Current Video'}
+        </button>
+      </div>
       
       {error && (
         <div className="error">

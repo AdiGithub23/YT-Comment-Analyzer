@@ -3,9 +3,13 @@ final_model
 
 *Details.MD
 HF-Deployment.MD
+Guides/
 
 _ytgrader/
 __pycache__
 
+youtube_api_test/
+
 .env
+package-lock.json
 
