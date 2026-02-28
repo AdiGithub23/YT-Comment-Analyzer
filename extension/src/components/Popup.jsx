@@ -1,13 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VideoInput from './VideoInput';
 import SentimentChart from './SentimentChart';
-import { extractVideoId, fetchVideoComments } from '../utils/youtube';
-import { analyzeComments } from '../api/sentiment';
+import { extractVideoId } from '../utils/youtube';
 
 const Popup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
+  const pollRef = useRef(null);
+
+  useEffect(() => {
+    syncFromStorage();
+    return () => clearInterval(pollRef.current);
+  }, []);
+
+  const syncFromStorage = () => {
+    chrome.storage?.local?.get(
+      ['sentimentStatus', 'sentimentResults', 'sentimentError'],
+      (data) => {
+        if (data?.sentimentStatus === 'loading') {
+          setLoading(true);
+          setError(null);
+          setResults(null);
+          startPolling();
+        } else if (data?.sentimentStatus === 'done' && data?.sentimentResults) {
+          setLoading(false);
+          setError(null);
+          setResults(data.sentimentResults);
+        } else if (data?.sentimentStatus === 'error') {
+          setLoading(false);
+          setError(data.sentimentError || 'Unknown error');
+          setResults(null);
+        } else {
+          // idle, cancelled, or no status — clean slate
+          setLoading(false);
+          setError(null);
+          setResults(null);
+        }
+      }
+    );
+  };
+
+  const startPolling = () => {
+    clearInterval(pollRef.current);
+    pollRef.current = setInterval(() => {
+      chrome.storage?.local?.get(
+        ['sentimentStatus', 'sentimentResults', 'sentimentError'],
+        (data) => {
+          if (data?.sentimentStatus === 'done') {
+            setLoading(false);
+            setResults(data.sentimentResults);
+            setError(null);
+            clearInterval(pollRef.current);
+          } else if (data?.sentimentStatus === 'error') {
+            setLoading(false);
+            setError(data.sentimentError || 'Unknown error');
+            setResults(null);
+            clearInterval(pollRef.current);
+          } else if (data?.sentimentStatus === 'idle') {
+            setLoading(false);
+            setError(null);
+            setResults(null);
+            clearInterval(pollRef.current);
+          }
+        }
+      );
+    }, 500);
+  };
 
   const getCurrentTabUrl = () => {
     return new Promise((resolve, reject) => {
@@ -24,90 +83,92 @@ const Popup = () => {
   };
 
   const handleAnalyze = async (url) => {
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      setError('Invalid YouTube URL');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResults(null);
 
-    try {
-      // Extract video ID
-      const videoId = extractVideoId(url);
-      if (!videoId) {
-        throw new Error('Invalid YouTube URL');
-      }
-
-      // Fetch comments
-      const commentsResult = await fetchVideoComments(videoId, 50);
-      if (!commentsResult.success) {
-        throw new Error(`YouTube API: ${commentsResult.error}`);
-      }
-
-      if (commentsResult.comments.length === 0) {
-        throw new Error('No comments found for this video');
-      }
-
-      // Analyze sentiment
-      const sentimentResult = await analyzeComments(commentsResult.comments);
-      if (!sentimentResult.success) {
-        throw new Error(`Sentiment API: ${sentimentResult.error}`);
-      }
-
-      setResults(sentimentResult);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    chrome.runtime.sendMessage(
+      { action: 'analyze', url, maxResults: 100 },
+      () => { startPolling(); }
+    );
   };
 
   const handleAnalyzeCurrent = async () => {
     try {
       const url = await getCurrentTabUrl();
-      // Check if it's a YouTube URL
       if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
         throw new Error('Current tab is not a YouTube video page');
       }
       await handleAnalyze(url);
     } catch (err) {
       setError(err.message);
-      setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    clearInterval(pollRef.current);
+    chrome.runtime.sendMessage({ action: 'cancel' }, () => {
+      setLoading(false);
+      setError(null);
+      setResults(null);
+    });
   };
 
   return (
     <div className="popup">
       <VideoInput onAnalyze={handleAnalyze} loading={loading} />
-      
-      <div style={{ marginTop: '10px', textAlign: 'center' }}>
-        <button 
-          onClick={handleAnalyzeCurrent} 
-          disabled={loading}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            width: '100%'
-          }}
-        >
-          {loading ? 'Analyzing...' : 'Analyze Current Video'}
-        </button>
-      </div>
-      
-      {error && (
-        <div className="error">
-          ❌ {error}
+
+      <div className="divider"><span>or</span></div>
+
+      <button
+        className="btn-secondary"
+        onClick={handleAnalyzeCurrent}
+        disabled={loading}
+      >
+        {loading ? 'Analyzing…' : 'Analyze Current Tab'}
+      </button>
+
+      {loading && (
+        <div className="loading-container">
+          <div className="spinner" />
+          <p>Analyzing comments…</p>
+          <button className="btn-cancel" onClick={handleCancel}>
+            Cancel
+          </button>
         </div>
       )}
-      
+
+      {error && (
+        <div className="error">
+          {error}
+        </div>
+      )}
+
       {results && (
         <div className="results">
           <SentimentChart data={results} />
           <div className="breakdown">
-            <div className="positive">😊 Positive: {results.counts.Positive}</div>
-            <div className="neutral">😐 Neutral: {results.counts.Neutral}</div>
-            <div className="negative">😞 Negative: {results.counts.Negative}</div>
+            <div className="breakdown-item positive">
+              <span className="breakdown-emoji">😊</span>
+              <span className="breakdown-label">Positive</span>
+              <span className="breakdown-count">{results.counts.Positive}</span>
+            </div>
+            <div className="breakdown-item neutral">
+              <span className="breakdown-emoji">😐</span>
+              <span className="breakdown-label">Neutral</span>
+              <span className="breakdown-count">{results.counts.Neutral}</span>
+            </div>
+            <div className="breakdown-item negative">
+              <span className="breakdown-emoji">😞</span>
+              <span className="breakdown-label">Negative</span>
+              <span className="breakdown-count">{results.counts.Negative}</span>
+            </div>
           </div>
         </div>
       )}
@@ -116,5 +177,3 @@ const Popup = () => {
 };
 
 export default Popup;
-
-
