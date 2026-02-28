@@ -2,29 +2,58 @@
 
 import os
 import torch
-from fastapi import FastAPI, HTTPException
+import requests
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict, Optional
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 import time
+from dotenv import load_dotenv
 
-app = FastAPI(title="YouTube Comment Sentiment API")
+load_dotenv()
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+# ALLOWED_ORIGINS = ["*"]
+
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+if not YOUTUBE_API_KEY:
+    raise RuntimeError("YOUTUBE_API_KEY not set in environment")
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model/final_model")
+ID2LABEL = {0: "Positive", 1: "Neutral", 2: "Negative"}
+LABEL2ID = {"Positive": 0, "Neutral": 1, "Negative": 2}
+MAX_LENGTH = 128
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global tokenizer, model
+    print(f"Loading model from {MODEL_PATH} on {device}...")
+    
+    # Load tokenizer and model
+    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
+    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+    model.to(device)
+    model.eval()
+    print("Model loaded successfully!")
+    
+    yield
+    
+    print("Shutting down... releasing resources.")
+    model = None
+    tokenizer = None
+
+app = FastAPI(title="YouTube Comment Sentiment API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model/final_model")
-
-# Label mapping
-ID2LABEL = {0: "Positive", 1: "Neutral", 2: "Negative"}
-LABEL2ID = {"Positive": 0, "Neutral": 1, "Negative": 2}
-MAX_LENGTH = 128
 
 # Global variables for model
 tokenizer = None
@@ -44,18 +73,12 @@ class BatchResponse(BaseModel):
     results: List[SentimentResult]
     processing_time_ms: float
 
-@app.on_event("startup")
-async def load_model():
-    """Load model on startup"""
-    global tokenizer, model
-    print(f"Loading model from {MODEL_PATH} on {device}...")
-    
-    # Load tokenizer and model
-    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
-    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
-    model.to(device)
-    model.eval()
-    print("Model loaded successfully!")
+class FetchCommentsResponse(BaseModel):
+    success: bool
+    comments: List[str]
+    total: int
+    error: Optional[str] = None
+
 
 @app.get("/")
 async def root():
@@ -72,6 +95,66 @@ async def health():
     if model is None or tokenizer is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     return {"status": "healthy", "device": str(device)}
+
+@app.get("/fetch-comments", response_model=FetchCommentsResponse)
+async def fetch_comments(
+    videoId: str = Query(..., description="YouTube video ID"),
+    maxResults: int = Query(50, description="Maximum number of comments to fetch")
+):
+    """
+    Fetch comments from YouTube API (proxied to hide API key)
+    """
+    try:
+        comments = []
+        next_page_token = None
+        youtube_url = "https://www.googleapis.com/youtube/v3/commentThreads"
+
+        while len(comments) < maxResults:
+            params = {
+                "part": "snippet",
+                "videoId": videoId,
+                "maxResults": min(100, maxResults - len(comments)),
+                "key": YOUTUBE_API_KEY,
+                "textFormat": "plainText"
+            }
+            if next_page_token:
+                params["pageToken"] = next_page_token
+
+            response = requests.get(youtube_url, params=params)
+            if response.status_code != 200:
+                error_data = response.json()
+                return FetchCommentsResponse(
+                    success=False,
+                    comments=[],
+                    total=0,
+                    error=error_data.get("error", {}).get("message", "YouTube API error")
+                )
+
+            data = response.json()
+            new_comments = [
+                item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+                for item in data.get("items", [])
+            ]
+            comments.extend(new_comments)
+            next_page_token = data.get("nextPageToken")
+            if not next_page_token:
+                break
+
+        comments = comments[:maxResults]
+        return FetchCommentsResponse(
+            success=True,
+            comments=comments,
+            total=len(comments)
+        )
+
+    except Exception as e:
+        return FetchCommentsResponse(
+            success=False,
+            comments=[],
+            total=0,
+            error=str(e)
+        )
+
 
 @app.post("/predict", response_model=BatchResponse)
 async def predict_sentiment(batch: CommentBatch):
