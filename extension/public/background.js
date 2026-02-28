@@ -1,5 +1,5 @@
 // const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = '__BACKEND_URL__';
 
 function extractVideoId(url) {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
