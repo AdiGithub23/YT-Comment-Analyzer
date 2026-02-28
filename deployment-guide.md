@@ -35,23 +35,13 @@
     VITE_BACKEND_URL=http://localhost:8000
 ```
 
-## My Requirement:
-
-- `backend` deploymeny in `AWS` (Whichever the suitable service).
-- For that, I need to write a proper `Dockerfile` for the `backend`.
----
-
-- Priorities: {First: "Free Tier Services", Second: "Resume worthy production scalability", Third: "Easy Management"}
----
-I want to Deploy this using `AWS App Runner + ECR`.
-- Then I can call it from elsewhere/ anywhere (browser extension).
+## Requirement:
+- Deployment using `AWS App Runner + ECR`.
+- Then call it from elsewhere/ anywhere (browser extension).
 However,
 - The `backend\model` alone is `256MB`.
 - The `backend\` is also almost `900MB`.
-- So, keep that in mind particularly.
 ---
-
-- First of all, understand what I'm about to do.
 
 # Final Verdict:
 
@@ -68,8 +58,3 @@ However,
   7. The code calls YouTube API (key safe in backend)
   8. Results returned to extension
 ```
-
-- If you understand what is to be done, just reflect briefly in your own words.
-- If you are updated with the workflow and possible to do it, provide the Dockerfile first.
-- DO NOT THINK OF SOPHISTICATED IDEAS.
-- I JUST WANT TO DO THIS REALLY FAST & EASY.
