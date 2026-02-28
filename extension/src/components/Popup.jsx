@@ -62,7 +62,6 @@ const Popup = () => {
   const handleAnalyzeCurrent = async () => {
     try {
       const url = await getCurrentTabUrl();
-      // Check if it's a YouTube URL
       if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
         throw new Error('Current tab is not a YouTube video page');
       }
@@ -76,38 +75,49 @@ const Popup = () => {
   return (
     <div className="popup">
       <VideoInput onAnalyze={handleAnalyze} loading={loading} />
-      
-      <div style={{ marginTop: '10px', textAlign: 'center' }}>
-        <button 
-          onClick={handleAnalyzeCurrent} 
-          disabled={loading}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            width: '100%'
-          }}
-        >
-          {loading ? 'Analyzing...' : 'Analyze Current Video'}
-        </button>
-      </div>
-      
-      {error && (
-        <div className="error">
-          ❌ {error}
+
+      <div className="divider"><span>or</span></div>
+
+      <button
+        className="btn-secondary"
+        onClick={handleAnalyzeCurrent}
+        disabled={loading}
+      >
+        {loading ? 'Analyzing…' : 'Analyze Current Tab'}
+      </button>
+
+      {loading && (
+        <div className="loading-container">
+          <div className="spinner" />
+          <p>Analyzing comments…</p>
         </div>
       )}
-      
+
+      {error && (
+        <div className="error">
+          {error}
+        </div>
+      )}
+
       {results && (
         <div className="results">
           <SentimentChart data={results} />
           <div className="breakdown">
-            <div className="positive">😊 Positive: {results.counts.Positive}</div>
-            <div className="neutral">😐 Neutral: {results.counts.Neutral}</div>
-            <div className="negative">😞 Negative: {results.counts.Negative}</div>
+            <div className="breakdown-item positive">
+              <span className="breakdown-emoji">😊</span>
+              <span className="breakdown-label">Positive</span>
+              <span className="breakdown-count">{results.counts.Positive}</span>
+            </div>
+            <div className="breakdown-item neutral">
+              <span className="breakdown-emoji">😐</span>
+              <span className="breakdown-label">Neutral</span>
+              <span className="breakdown-count">{results.counts.Neutral}</span>
+            </div>
+            <div className="breakdown-item negative">
+              <span className="breakdown-emoji">😞</span>
+              <span className="breakdown-label">Negative</span>
+              <span className="breakdown-count">{results.counts.Negative}</span>
+            </div>
           </div>
         </div>
       )}

@@ -12,17 +12,17 @@ const VideoInput = ({ onAnalyze, loading }) => {
 
   return (
     <div className="video-input">
-      <h3>YouTube Comment Sentiment Analyzer</h3>
+      <h3>Sentiment Analyzer</h3>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Enter YouTube video URL"
+          placeholder="Paste YouTube video URL…"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           disabled={loading}
         />
-        <button type="submit" disabled={loading || !url.trim()}>
-          {loading ? 'Analyzing...' : 'Analyze Sentiment'}
+        <button className="btn-primary" type="submit" disabled={loading || !url.trim()}>
+          {loading ? 'Analyzing…' : 'Analyze Comments'}
         </button>
       </form>
     </div>
