@@ -1,9 +1,10 @@
 fastapi
 uvicorn
 requests
-dotenv
+python-dotenv
 pydantic
 python-multipart
-
-torch
 transformers
+
+# When building the Docker image, comment `torch`.
+# torch         # It's installed separately with CPU-only index.
