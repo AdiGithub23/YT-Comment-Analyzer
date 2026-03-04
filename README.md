@@ -76,6 +76,9 @@ Place it inside `backend/model/final_model/` with the config files. Must have mo
     backend\model\final_model\tokenizer.json
 ```
 
+The dataset used to train the model is at: `https://www.kaggle.com/datasets/amaanpoonawala/youtube-comments-sentiment-dataset`
+(For training efficiency, this model uses only a set of English comments)
+
 ### 2. Backend
 
 ```bash
